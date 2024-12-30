@@ -44,7 +44,7 @@ impl Actor for WsActor {
             room: Box::clone(&self.room)
         };
 
-        tokio::spawn({
+        actix::spawn({
             let room = Box::clone(&self.room);
             let rooms = Data::clone(&self.rooms);
             async move {
@@ -57,7 +57,7 @@ impl Actor for WsActor {
     }
 
     fn stopped(&mut self, _: &mut Self::Context) {
-        tokio::spawn({
+        actix::spawn({
             let id = self.id;
             let room = Box::clone(&self.room);
             let rooms = Data::clone(&self.rooms);
@@ -83,7 +83,7 @@ impl StreamHandler::<Result<ws::Message, ws::ProtocolError>> for WsActor {
                 let rooms = Data::clone(&self.rooms);
 
                 // broadcast message
-                tokio::spawn(async move {
+                actix::spawn(async move {
                     let rooms = rooms.lock().await;
                     if let Some(conns) = rooms.get(&room) {
                         conns.iter().filter(|(id, ..)| **id != src_id).for_each(|(.., conn)| {
@@ -125,8 +125,8 @@ async fn ws_route(rq: HttpRequest, stream: Payload, room: Path::<String>, rooms:
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let key_file = &mut BufReader::new(File::open("key.pem")?);
-    let cert_file = &mut BufReader::new(File::open("cert.pem")?);
+    let key_file = &mut BufReader::new(File::open("key.pem").expect("run `bash ./gen_crt.sh` first"));
+    let cert_file = &mut BufReader::new(File::open("cert.pem").expect("run `bash ./gen_crt.sh` first"));
 
     let cert_chain = certs(cert_file)
         .unwrap()
