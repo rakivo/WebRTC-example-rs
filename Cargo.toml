@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "webrtc"
-path = "back/main.rs"
+path = "main.rs"
 
 [dependencies]
 actix-web = { version = "4.9", features = ["rustls-0_21"] }
