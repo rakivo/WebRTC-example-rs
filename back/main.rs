@@ -16,7 +16,7 @@ static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
 struct WsConn {
     id: usize,
-	#[allow(unused)] room: Box::<str>,
+    #[allow(unused)] room: Box::<str>,
     addr: Recipient::<Broadcast>
 }
 
@@ -67,7 +67,7 @@ impl Actor for WsActor {
                     room_conns.remove(&id);
                     if room_conns.is_empty() {
                         rooms.remove(&room);
-	                }
+                    }
                 }
             }
         });
@@ -79,16 +79,16 @@ impl StreamHandler::<Result<ws::Message, ws::ProtocolError>> for WsActor {
         match msg {
             Ok(ws::Message::Text(text)) => {
                 let src_id = self.id;
-				let room = Box::clone(&self.room);
-				let rooms = Data::clone(&self.rooms);
+                let room = Box::clone(&self.room);
+                let rooms = Data::clone(&self.rooms);
 
                 // broadcast message
                 tokio::spawn(async move {
                     let rooms = rooms.lock().await;
                     if let Some(conns) = rooms.get(&room) {
-						conns.iter().filter(|(id, ..)| **id != src_id).for_each(|(.., conn)| {
+                        conns.iter().filter(|(id, ..)| **id != src_id).for_each(|(.., conn)| {
                             _ = conn.addr.do_send(Broadcast(text.to_string()))
-						});
+                        })
                     }
                 });
             }
@@ -105,7 +105,7 @@ impl StreamHandler::<Result<ws::Message, ws::ProtocolError>> for WsActor {
 impl Handler<Broadcast> for WsActor {
     type Result = ();
 
-	#[inline]
+    #[inline]
     fn handle(&mut self, msg: Broadcast, ctx: &mut Self::Context) {
         ctx.text(msg.0)
     }
@@ -125,39 +125,39 @@ async fn ws_route(rq: HttpRequest, stream: Payload, room: Path::<String>, rooms:
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-	let key_file = &mut BufReader::new(File::open("key.pem")?);
-	let cert_file = &mut BufReader::new(File::open("cert.pem")?);
+    let key_file = &mut BufReader::new(File::open("key.pem")?);
+    let cert_file = &mut BufReader::new(File::open("cert.pem")?);
 
-	let cert_chain = certs(cert_file)
-		.unwrap()
-		.into_iter()
-		.map(rustls::Certificate)
-		.collect();
+    let cert_chain = certs(cert_file)
+        .unwrap()
+        .into_iter()
+        .map(rustls::Certificate)
+        .collect();
 
-let mut keys: Vec<rustls::PrivateKey> = pkcs8_private_keys(key_file)
-    .unwrap()
-    .into_iter()
-    .map(rustls::PrivateKey)
-    .collect();
+    let mut keys = pkcs8_private_keys(key_file)
+        .unwrap()
+        .into_iter()
+        .map(rustls::PrivateKey)
+        .collect::<Vec::<rustls::PrivateKey>>();
 
-	if keys.is_empty() {
-		let key_file = &mut BufReader::new(File::open("key.pem")?);
-		keys = rustls_pemfile::rsa_private_keys(key_file)
-			.unwrap()
-			.into_iter()
-			.map(rustls::PrivateKey)
-			.collect()
-	}
+    if keys.is_empty() {
+        let key_file = &mut BufReader::new(File::open("key.pem")?);
+        keys = rustls_pemfile::rsa_private_keys(key_file)
+            .unwrap()
+            .into_iter()
+            .map(rustls::PrivateKey)
+            .collect()
+    }
 
-	if keys.is_empty() {
-		panic!("no valid private key found")
-	}
+    if keys.is_empty() {
+        panic!("no valid private key found")
+    }
 
-	let cfg = ServerConfig::builder()
-		.with_safe_defaults()
-		.with_no_client_auth()
-		.with_single_cert(cert_chain, keys.remove(0))
-		.expect("failed to create server config");
+    let cfg = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(cert_chain, keys.remove(0))
+        .expect("failed to create server config");
 
     let rooms = Arc::new(Mutex::new(Rooms::new()));
 
