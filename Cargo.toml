@@ -1,0 +1,19 @@
+[package]
+name = "webrtc"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "webrtc"
+path = "back/main.rs"
+
+[dependencies]
+actix = "0.13"
+actix-files = "0.6"
+actix-web-actors = "4.2"
+actix-web = { version = "4.9", features = ["rustls-0_21"] }
+
+tokio = { version = "1.35", features = ["full"] }
+
+rustls = "0.21"
+rustls-pemfile = "1.0"
