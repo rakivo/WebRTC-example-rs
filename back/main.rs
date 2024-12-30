@@ -1,14 +1,12 @@
-use std::fs::File;
 use std::sync::Arc;
-use std::io::BufReader;
 use std::collections::HashMap;
 use std::sync::atomic::{Ordering, AtomicUsize};
 
 use tokio::sync::Mutex;
 use actix_files::Files;
+use rcgen::CertifiedKey;
 use actix_web_actors::ws;
 use rustls::ServerConfig;
-use rustls_pemfile::{certs, pkcs8_private_keys};
 use actix::{Actor, Handler, Message, Recipient, ActorContext, AsyncContext, StreamHandler};
 use actix_web::{get, App, Error, HttpRequest, HttpResponse, HttpServer, web::{Data, Path, Payload}};
 
@@ -125,38 +123,17 @@ async fn ws_route(rq: HttpRequest, stream: Payload, room: Path::<String>, rooms:
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let key_file = &mut BufReader::new(File::open("key.pem").expect("run `bash ./gen_crt.sh` first"));
-    let cert_file = &mut BufReader::new(File::open("cert.pem").expect("run `bash ./gen_crt.sh` first"));
+    let CertifiedKey { cert, key_pair } = rcgen::generate_simple_self_signed(vec![
+        "127.0.0.1".to_owned(), "localhost".to_owned()
+    ]).unwrap();
 
-    let cert_chain = certs(cert_file)
-        .unwrap()
-        .into_iter()
-        .map(rustls::Certificate)
-        .collect();
-
-    let mut keys = pkcs8_private_keys(key_file)
-        .unwrap()
-        .into_iter()
-        .map(rustls::PrivateKey)
-        .collect::<Vec::<rustls::PrivateKey>>();
-
-    if keys.is_empty() {
-        let key_file = &mut BufReader::new(File::open("key.pem")?);
-        keys = rustls_pemfile::rsa_private_keys(key_file)
-            .unwrap()
-            .into_iter()
-            .map(rustls::PrivateKey)
-            .collect()
-    }
-
-    if keys.is_empty() {
-        panic!("no valid private key found")
-    }
+    let key = rustls::PrivateKey(key_pair.serialize_der());
+    let cert_chain = rustls::Certificate(cert.der().to_vec());
 
     let cfg = ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
-        .with_single_cert(cert_chain, keys.remove(0))
+        .with_single_cert(vec![cert_chain], key)
         .expect("failed to create server config");
 
     let rooms = Arc::new(Mutex::new(Rooms::new()));
