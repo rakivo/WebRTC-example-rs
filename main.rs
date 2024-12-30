@@ -148,6 +148,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(ws_route)
             .app_data(Data::new(Arc::clone(&rooms)))
-            .service(Files::new("/", "front").index_file("index.html"))
+            .service(Files::new("/", ".").index_file("index.html"))
     }).bind_rustls_021("0.0.0.0:8443", cfg)?.run().await
 }
