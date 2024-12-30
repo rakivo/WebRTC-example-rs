@@ -45,7 +45,7 @@ async function pageReady() {
 
   const constraints = {
     video: true,
-    audio: true,
+    audio: false
   };
 
   if (!navigator.mediaDevices.getUserMedia) {

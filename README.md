@@ -2,8 +2,8 @@
 
 # Quick start
 ```console
-$ bash gen_crt.sh
 $ cargo run --release
+$ firefox https://localhost:8443
 ```
 
 # CREDITS
