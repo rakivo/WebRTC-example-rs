@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+const HOST = window.location.host;
+
 let localStream;
 let localVideo;
 let peerConnection;
@@ -40,7 +42,7 @@ async function pageReady() {
   localVideo = document.getElementById('localVideo');
   remoteVideo = document.getElementById('remoteVideo');
 
-  serverConnection = new WebSocket('wss://localhost:8443/ws/room1');
+  serverConnection = new WebSocket(`wss://${HOST}/ws/room1`);
   serverConnection.onmessage = gotMessageFromServer;
 
   const constraints = {
