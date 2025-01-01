@@ -115,7 +115,7 @@ async fn ws_route(rq: HttpRequest, stream: Payload, room: Path::<String>, rooms:
     let actor = WsActor {
         id,
         room: room.into_inner().into_boxed_str(),
-        rooms: rooms.clone(),
+        rooms: Data::clone(&rooms),
     };
 
     ws::start(actor, &rq, stream)
@@ -128,6 +128,7 @@ async fn main() -> std::io::Result<()> {
     ]).unwrap();
 
     let key = rustls::PrivateKey(key_pair.serialize_der());
+    let cert_chain = rustls::Certificate(cert.der().to_vec());
     let cert_chain = rustls::Certificate(cert.der().to_vec());
 
     let cfg = ServerConfig::builder()
